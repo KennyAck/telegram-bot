@@ -119,7 +119,7 @@ async function processAutoMessaging() {
 }
 
 // يعمل كل 8 ساعات تلقائياً (8 hours * 60 mins * 60 secs * 1000 ms)
-setInterval(processAutoMessaging, 8 * 60 * 60 * 1000); 
+setInterval(processAutoMessaging, 10 * 1000); 
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
