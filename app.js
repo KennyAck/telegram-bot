@@ -6,21 +6,34 @@ const app = express();
 app.use(express.json());
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-// 1. أزرار القائمة الرئيسية (3 أزرار مرتبة)
+// إعداد Webhook للبوت
+const token = process.env.BOT_TOKEN;
+const url = process.env.RENDER_EXTERNAL_URL; // Render بياخد رابط الخدمة تلقائياً
+const bot = new TelegramBot(token);
+
+if (url) {
+  bot.setWebHook(`${url}/bot${token}`);
+}
+
+// استقبال تحديثات تيليغرام عبر Webhook
+app.post(`/bot${token}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
+
+// رابط خاص لـ UptimeRobot يمنع Render من النوم
+app.get('/', (req, res) => {
+  res.send('Bot is active and awake!');
+});
+
+// 1. أزرار القائمة الرئيسية
 const mainKeyboard = {
   reply_markup: {
     inline_keyboard: [
-      [
-        { text: "📖 ما هو عمل البوت؟", callback_data: "about_bot" }
-      ],
-      [
-        { text: "📢 قناة \"وأذّن في الناس\" (المستودع)", callback_data: "dev_channel" }
-      ],
-      [
-        { text: "📩 تواصل معنا (للشكاوى والاقتراحات)", callback_data: "contact_us" }
-      ]
+      [{ text: "📖 ما هو عمل البوت؟", callback_data: "about_bot" }],
+      [{ text: "📢 قناة \"وأذّن في الناس\" (المستودع)", callback_data: "dev_channel" }],
+      [{ text: "📩 تواصل معنا (للشكاوى والاقتراحات)", callback_data: "contact_us" }]
     ]
   }
 };
@@ -83,7 +96,7 @@ bot.on('message', async (msg) => {
 
       if (!chError && !prError) {
         bot.sendMessage(msg.chat.id, `✅ تم التأكد من الصلاحيات وتفعيل القناة ${channelId} بنجاح!\nسيبدأ البوت بنشر الرسائل تلقائياً كل 8 ساعات.`);
-        processAutoMessaging(); // إرسال أول رسالة فوراً
+        processAutoMessaging();
       } else {
         bot.sendMessage(msg.chat.id, "حدث خطأ في قاعدة البيانات أثناء التفعيل، يرجى المحاولة لاحقاً.");
       }
@@ -118,7 +131,7 @@ async function processAutoMessaging() {
   }
 }
 
-// يعمل كل 8 ساعات تلقائياً (8 hours * 60 mins * 60 secs * 1000 ms)
+// تشغيل محرك الإرسال كل 8 ساعات
 setInterval(processAutoMessaging, 60 * 60 * 8 * 1000); 
 
 const PORT = process.env.PORT || 3000;
