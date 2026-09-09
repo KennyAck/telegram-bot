@@ -380,5 +380,20 @@ async function handleChannelOwnership(userChatId, telegramUserId, channelId) {
 // 5. تشغيل محرك الجدولة (يفحص كل دقيقة بتوقيت Asia/Riyadh — بدون تعويض مواعيد فائتة)
 startScheduler(bot, supabase);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  
+  // تسجيل رابط الـ Webhook مع تيليجرام تلقائياً عند الإقلاع
+  const token = process.env.BOT_TOKEN;
+  const externalUrl = process.env.RENDER_EXTERNAL_URL;
+  if (externalUrl && token) {
+    const webhookUrl = `${externalUrl}/bot${token}`;
+    try {
+      await bot.setWebHook(webhookUrl);
+      console.log(`✅ تم تفعيل الـ Webhook بنجاح على الرابط: ${webhookUrl}`);
+    } catch (err) {
+      console.error('❌ خطأ في تفعيل الـ Webhook:', err.message);
+    }
+  }
+});
